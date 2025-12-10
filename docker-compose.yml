@@ -1,0 +1,26 @@
+version: "3.8"
+services:
+  mongo:
+    image: mongo:6
+    restart: always
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: url_shortener
+    ports:
+      - "27017:27017"
+
+  web:
+    build: .
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+      - DATABASE_NAME=url_shortener
+      - BASE_URL=http://localhost:8000
+    ports:
+      - "8000:8000"
+    restart: on-failure
+
+volumes:
+  mongo-data:
