@@ -47,11 +47,16 @@ Response Body:
   "longUrl": "http://example.com"
 }
 
+# How to Run
 
+### To build
+docker-compose down -v
+### To break down
+docker-compose up -d
 
-TODOS:
-* Make docker work
+# TODOS:
+* Implement time decay for urls
+* Implement terraform
 * Implement aws
-* Test terraform
 * Implement authentication
-* Load tests
+* Do load tests

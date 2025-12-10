@@ -24,6 +24,7 @@ class ShortenRequest(BaseModel):
 
 async def gen_unique_short():
     coll = db[COLLECTION]
+
     while True:
         s = "".join(random.choices(string.ascii_letters + string.digits, k=SHORT_LEN))
         if not await coll.find_one({"short": s}):
