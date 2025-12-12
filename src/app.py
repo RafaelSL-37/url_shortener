@@ -1,5 +1,5 @@
-from ast import List
-from datetime import datetime
+from typing import List
+from datetime import datetime, timezone
 import os
 import string
 import random
@@ -9,10 +9,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
 from dto.customer import Customer, CustomerCreate, CustomerUpdate
+from dto.short_url import UrlShortenRequest
 from models.base import Base
 from models.customer import CustomerModel
 from models.url import UrlModel
-from dto.short_url import ShortenRequest
 from uuid import UUID as UUIDType
 
 USER = os.getenv('POSTGRES_USER')
@@ -43,7 +43,7 @@ async def gen_unique_short():
                 return s
 
 @app.post("/api/urls/shorten")
-async def shorten(req: ShortenRequest):
+async def shorten(req: UrlShortenRequest):
     async with AsyncSessionLocal() as session:
         short = await gen_unique_short()
         url_record = UrlModel(short=short, longUrl=str(req.longUrl), clicks=0)
@@ -101,13 +101,13 @@ async def list_customers(with_deleted: bool = False):
         customers = result.scalars().all()
         return [
             Customer(
-                id=c.id,
-                email=c.email,
-                created_at=c.created_at,
-                updated_at=c.updated_at,
-                deleted_at=c.deleted_at,
+                id=customer.id,
+                email=customer.email,
+                created_at=customer.created_at,
+                updated_at=customer.updated_at,
+                deleted_at=customer.deleted_at,
             )
-            for c in customers
+            for customer in customers
         ]
 
 @app.get("/api/customers/{customer_id}", response_model=Customer)
@@ -141,7 +141,7 @@ async def update_customer(customer_id: UUIDType, payload: CustomerUpdate):
             customer.email = str(payload.email)
         if payload.password is not None:
             customer.password = payload.password
-        customer.updated_at = datetime.now(datetime.timezone.utc)
+        customer.updated_at = datetime.now(timezone.utc)
         session.add(customer)
         await session.commit()
         await session.refresh(customer)
@@ -162,7 +162,7 @@ async def delete_customer(customer_id: UUIDType):
         customer = result.scalars().first()
         if not customer:
             raise HTTPException(status_code=404, detail="Customer not found")
-        customer.deleted_at = datetime.now(datetime.timezone.utc)  # soft delete
+        customer.deleted_at = datetime.now(timezone.utc)
         session.add(customer)
         await session.commit()
         return None

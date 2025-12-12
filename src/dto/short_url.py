@@ -1,5 +1,5 @@
 from pydantic import BaseModel, HttpUrl
 
 
-class ShortenRequest(BaseModel):
+class UrlShortenRequest(BaseModel):
     longUrl: HttpUrl
