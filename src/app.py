@@ -15,7 +15,12 @@ from models.url import UrlModel
 from dto.short_url import ShortenRequest
 from uuid import UUID as UUIDType
 
-DATABASE_URL = f"postgresql+asyncpg://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+USER = os.getenv('POSTGRES_USER')
+PASSWORD = os.getenv('POSTGRES_PASSWORD')
+DATABASE = os.getenv('POSTGRES_DATABASE')
+HOST = os.getenv('POSTGRES_HOST')
+PORT = os.getenv('POSTGRES_PORT')
+DATABASE_URL = f"postgresql+asyncpg://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}"
 SHORT_LEN = 6
 
 engine = create_async_engine(DATABASE_URL, echo=False)
