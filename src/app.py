@@ -87,9 +87,12 @@ async def create_customer(payload: CustomerCreate):
         )
 
 @app.get("/api/customers", response_model=List[Customer])
-async def list_customers():
+async def list_customers(with_deleted: bool = False):
     async with AsyncSessionLocal() as session:
-        result = await session.execute(select(CustomerModel).where(CustomerModel.deleted_at.is_(None)))
+        stmt = select(CustomerModel)
+        if not with_deleted:
+            stmt = stmt.where(CustomerModel.deleted_at.is_(None))
+        result = await session.execute(stmt)
         customers = result.scalars().all()
         return [
             Customer(
@@ -103,11 +106,12 @@ async def list_customers():
         ]
 
 @app.get("/api/customers/{customer_id}", response_model=Customer)
-async def get_customer(customer_id: UUIDType):
+async def get_customer(customer_id: UUIDType, with_deleted: bool = False):
     async with AsyncSessionLocal() as session:
-        result = await session.execute(
-            select(CustomerModel).where(CustomerModel.id == customer_id, CustomerModel.deleted_at.is_(None))
-        )
+        stmt = select(CustomerModel).where(CustomerModel.id == customer_id)
+        if not with_deleted:
+            stmt = stmt.where(CustomerModel.deleted_at.is_(None))
+        result = await session.execute(stmt)
         customer = result.scalars().first()
         if not customer:
             raise HTTPException(status_code=404, detail="Customer not found")
@@ -118,7 +122,6 @@ async def get_customer(customer_id: UUIDType):
             updated_at=customer.updated_at,
             deleted_at=customer.deleted_at,
         )
-
 
 @app.put("/api/customers/{customer_id}", response_model=Customer)
 async def update_customer(customer_id: UUIDType, payload: CustomerUpdate):
