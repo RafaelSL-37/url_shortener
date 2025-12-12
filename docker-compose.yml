@@ -1,26 +1,27 @@
 version: "3.8"
 services:
-  mongo:
-    image: mongo:6
+  postgres:
+    image: postgres:15
     restart: always
-    volumes:
-      - mongo-data:/data/db
     environment:
-      MONGO_INITDB_DATABASE: url_shortener
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: url_shortener
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
     ports:
-      - "27017:27017"
+      - "5432:5432"
 
   web:
     build: .
     depends_on:
-      - mongo
+      - postgres
     environment:
-      - MONGO_URI=mongodb://mongo:27017
-      - DATABASE_NAME=url_shortener
+      - DATABASE_URL=postgresql+asyncpg://user:password@postgres:5432/url_shortener
       - BASE_URL=http://localhost:8000
     ports:
       - "8000:8000"
     restart: on-failure
 
 volumes:
-  mongo-data:
+  postgres-data:

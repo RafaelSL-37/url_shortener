@@ -55,8 +55,12 @@ docker-compose down -v
 docker-compose up -d
 
 # TODOS:
+* Create route.py
+* Add customer deleted_at, updated_at and GET, POST, DELETE, UPDATE
+* Lint code
 * Implement time decay for urls
 * Implement terraform
 * Implement aws
+* Implement redis
 * Implement authentication
 * Do load tests
