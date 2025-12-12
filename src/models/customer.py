@@ -9,4 +9,6 @@ class CustomerModel(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     email = Column(String(255), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
-    created_at = Column(DateTime, default=datetime.now(datetime.timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(datetime.timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.now(datetime.timezone.utc), nullable=True)
+    deleted_at = Column(DateTime, nullable=True)
