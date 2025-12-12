@@ -25,30 +25,8 @@ Study repository to implement an URL shortener with infrastructure.
 > High Durability: Shortened URLs should be stored reliably so they persist over time, even across server failures, ensuring long-term accessibility.
 > Security: The service must prevent malicious links from being created and protect user data, implementing safeguards against spam, abuse, and unauthorized access to sensitive information.
 
-# API Endpoints
-### POST /api/urls/shorten
-Shorten a given long URL and return the shortened URL.
-
-Request Body:
-{
-  "longUrl": "http://example.com"
-}
-
-Response Body:
-{
-  "shortUrl": "http://urlshort.ly/abcd"
-}
-
-### GET /api/urls/{shortUrl}
-Redirect to the original long URL using the shortened URL.
-
-Response Body:
-{
-  "longUrl": "http://example.com"
-}
 
 # How to Run
-
 ### To build
 docker-compose down -v
 ### To break down
@@ -56,7 +34,6 @@ docker-compose up -d
 
 # TODOS:
 * Create route.py
-* Add customer deleted_at, updated_at and GET, POST, DELETE, UPDATE
 * Lint code
 * Implement time decay for urls
 * Implement terraform
