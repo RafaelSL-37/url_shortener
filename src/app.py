@@ -2,6 +2,7 @@ from http.client import HTTPException
 from fastapi import FastAPI
 from fastapi.params import Depends
 from sqlalchemy import select
+from datetime import datetime, timezone
 from base_model import Base
 from db import AsyncSessionLocal, engine
 from customers.customers_router import customers_router
@@ -29,6 +30,10 @@ async def redirect_short(short: str, session=Depends(get_session)):
 
     if not url:
         raise HTTPException(status_code=404, detail="URL not found")
+    
+    # Check if URL has expired
+    if url.expiration_date is not None and datetime.now(timezone.utc) > url.expiration_date:
+        raise HTTPException(status_code=404, detail="URL has expired")
     
     url.clicks += 1
     await session.commit()

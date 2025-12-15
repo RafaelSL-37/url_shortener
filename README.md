@@ -32,10 +32,13 @@ docker-compose build --no-cache web
 ### To up
 docker-compose up -d
 ### To down
-docker-compose down -v
+docker-compose down
+### To build, run and access logs
+docker-compose build --no-cache web && docker-compose up -d && docker-compose logs -f web
 
 # TODOS:
-* Implement time decay for urls
-* Implement redis
-* Implement authentication
+* Create tests
 * Do load tests
+* Implement github actions ci/cd workflow
+* Test on aws
+* Implement redis
