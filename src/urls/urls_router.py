@@ -31,7 +31,6 @@ async def gen_unique_short(session):
 async def shorten(req: UrlShortenRequest, session=Depends(get_session), request: Request = None, current_customer=Depends(get_current_customer)):
     short_url = await gen_unique_short(session)
     
-
     if current_customer is None:
         expiration_date = datetime.now(timezone.utc) + timedelta(days=7)
     elif current_customer.type == "PREMIUM":

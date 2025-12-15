@@ -15,11 +15,10 @@ class CustomerUpdate(BaseModel):
     type: Optional[str] = None
 
     @field_validator('type')
-    def validate_type(cls, v):
-        if v is not None and v not in ["DEFAULT", "PREMIUM"]:
-            raise ValueError('type must be either "DEFAULT" or "PREMIUM"')
-        return v
-
+    def validate_type(cls, value):
+        if value is not None and value not in ["DEFAULT", "PREMIUM"]:
+            raise ValueError(f'Type must be either "DEFAULT" or "PREMIUM", received {value}')
+        return value
 
 class Customer(BaseModel):
     id: UUIDType
