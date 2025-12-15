@@ -1,0 +1,20 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform.tfvars.example
+.terraform.lock.hcl
+
+# Sensitive files
+*.pem
+*.key
+.env
+.env.local
+terraform.tfvars
+
+# OS
+.DS_Store
+*.swp
+*.swo
+*~

@@ -35,10 +35,7 @@ docker-compose up -d
 docker-compose down -v
 
 # TODOS:
-* Lint code
 * Implement time decay for urls
-* Implement terraform
-* Implement aws
 * Implement redis
 * Implement authentication
 * Do load tests
