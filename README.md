@@ -35,7 +35,6 @@ docker-compose up -d
 docker-compose down -v
 
 # TODOS:
-* Create route.py
 * Lint code
 * Implement time decay for urls
 * Implement terraform
