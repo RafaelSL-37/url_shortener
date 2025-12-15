@@ -1,11 +1,13 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from sqlalchemy import select
 from db import AsyncSessionLocal
+from datetime import datetime, timezone, timedelta
 import os
 import random
 import string
 from urls.urls_dto import UrlShortenRequest
 from urls.urls_model import UrlModel
+from auth import get_current_customer
 
 urls_router = APIRouter(prefix="/api/urls", tags=["urls"])
 SHORT_LEN = int(os.getenv("SHORT_LEN", "6"))
@@ -26,18 +28,32 @@ async def gen_unique_short(session):
 
 
 @urls_router.post("/shorten")
-async def shorten(req: UrlShortenRequest, session=Depends(get_session)):
+async def shorten(req: UrlShortenRequest, session=Depends(get_session), request: Request = None, current_customer=Depends(get_current_customer)):
     short_url = await gen_unique_short(session)
-    url_record = UrlModel(short_url=short_url, long_url=str(req.longUrl), clicks=0)
+    
+    if current_customer is None:
+        expiration_date = datetime.now(timezone.utc) + timedelta(days=7)
+    elif current_customer.type == "PREMIUM":
+        expiration_date = None
+    else:
+        expiration_date = datetime.now(timezone.utc) + timedelta(days=30)
+    
+    url_record = UrlModel(
+        short_url=short_url,
+        long_url=str(req.longUrl),
+        customer_id=current_customer.id,
+        expiration_date=expiration_date,
+        clicks=0
+    )
     session.add(url_record)
     await session.commit()
 
     base_url = os.getenv("BASE_URL", "http://localhost:8000")
-    return {"shortUrl": f"{base_url}/{short_url}"}
+    return {"shortUrl": f"{base_url}/r/{short_url}"}
 
 
 @urls_router.get("/{short}")
-async def get_mapping(short: str, session=Depends(get_session)):
+async def get_mapping(short: str, session=Depends(get_session), request: Request = None, current_customer=Depends(get_current_customer)):
     urls = await session.execute(select(UrlModel).where(UrlModel.short_url == short))
     url = urls.scalars().first()
 
