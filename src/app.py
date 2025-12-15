@@ -31,7 +31,6 @@ async def redirect_short(short: str, session=Depends(get_session)):
     if not url:
         raise HTTPException(status_code=404, detail="URL not found")
     
-    # Check if URL has expired
     if url.expiration_date is not None and datetime.now(timezone.utc) > url.expiration_date:
         raise HTTPException(status_code=404, detail="URL has expired")
     

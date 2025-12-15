@@ -7,7 +7,7 @@ import random
 import string
 from urls.urls_dto import UrlShortenRequest
 from urls.urls_model import UrlModel
-from auth import get_current_customer, get_current_customer_optional
+from auth import get_current_customer
 
 urls_router = APIRouter(prefix="/api/urls", tags=["urls"])
 SHORT_LEN = int(os.getenv("SHORT_LEN", "6"))
@@ -29,7 +29,6 @@ async def gen_unique_short(session):
 
 @urls_router.post("/shorten")
 async def shorten(req: UrlShortenRequest, session=Depends(get_session), request: Request = None, current_customer=Depends(get_current_customer)):
-    """Shorten a URL. Requires authentication. Expiration depends on customer type."""
     short_url = await gen_unique_short(session)
     
 
@@ -56,7 +55,6 @@ async def shorten(req: UrlShortenRequest, session=Depends(get_session), request:
 
 @urls_router.get("/{short}")
 async def get_mapping(short: str, session=Depends(get_session), request: Request = None, current_customer=Depends(get_current_customer)):
-    """Get URL mapping. Requires authentication."""
     urls = await session.execute(select(UrlModel).where(UrlModel.short_url == short))
     url = urls.scalars().first()
 
