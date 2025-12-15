@@ -1,0 +1,11 @@
+aws_region            = "us-east-1"
+environment           = "prod"
+app_name              = "url-shortener"
+lambda_memory         = 512
+db_instance_class     = "db.t3.micro"
+db_allocated_storage  = 20
+db_name               = "url_shortener"
+db_username           = "postgres"
+db_password           = "ChangeMe@12345"  # Change this to a strong password
+skip_final_snapshot   = false
+db_multi_az           = false
