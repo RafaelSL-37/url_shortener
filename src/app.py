@@ -5,9 +5,9 @@ from sqlalchemy import select
 from datetime import datetime, timezone
 from base_model import Base
 from db import AsyncSessionLocal, engine
-from customers.customers_router import customers_router
+from customers.customers_controller import customers_router
 from urls.urls_model import UrlModel
-from urls.urls_router import urls_router
+from urls.urls_controller import urls_router
 
 app = FastAPI()
 
@@ -22,7 +22,7 @@ async def get_session():
     async with AsyncSessionLocal() as session:
         yield session
 
-#This endpoint is not referenced on the urls_router as to reduce the link size.
+#This endpoint is not referenced on the urls_controller as to reduce the link size.
 @app.get("/r/{short}")
 async def redirect_short(short: str, session=Depends(get_session)):
     urls = await session.execute(select(UrlModel).where(UrlModel.short_url == short))

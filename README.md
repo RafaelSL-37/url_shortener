@@ -36,8 +36,9 @@ docker-compose down
 ### To build, run and access logs
 docker-compose build --no-cache web && docker-compose up -d && docker-compose logs -f web
 
+
 # TODOS:
-* Create tests
+* Create tests and create services
 * Do load tests
 * Implement github actions ci/cd workflow
 * Test on aws
