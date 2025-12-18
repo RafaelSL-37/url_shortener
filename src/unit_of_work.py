@@ -12,11 +12,10 @@ class UnitOfWork:
         self._session_cm = None
 
     async def __aenter__(self):
-        # AsyncSessionLocal returns an async context manager
         self._session_cm = self.session_factory()
         self.session = await self._session_cm.__aenter__()
-        self.customers = CustomerRepository(self.session)
-        self.urls = UrlRepository(self.session)
+        self.customers_repository = CustomerRepository(self.session)
+        self.urls_repository = UrlRepository(self.session)
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
