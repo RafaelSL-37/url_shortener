@@ -4,14 +4,7 @@ from uuid import UUID as UUIDType
 from customers.customers_dto import Customer, CustomerCreate, CustomerUpdate
 from db import AsyncSessionLocal
 from auth import get_current_customer, create_access_token, verify_password, hash_password, Token
-from customers.customers_service import (
-    find_customer_by_email,
-    create_customer,
-    list_customers,
-    get_customer_by_id,
-    update_customer,
-    soft_delete_customer,
-)
+from customers.customers_service import CustomerService
 from pydantic import BaseModel
 
 
@@ -30,7 +23,8 @@ async def get_session():
 
 @customers_router.post("/login", response_model=Token)
 async def login(payload: LoginRequest, session=Depends(get_session)):
-    customer = await find_customer_by_email(session, payload.email)
+    service = CustomerService()
+    customer = await service.find_customer_by_email(session, payload.email)
 
     if not customer or not verify_password(payload.password, customer.password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
@@ -41,8 +35,9 @@ async def login(payload: LoginRequest, session=Depends(get_session)):
 
 @customers_router.post("/", response_model=Customer)
 async def create_customer(payload: CustomerCreate, session=Depends(get_session)):
+    service = CustomerService()
     hashed_password = hash_password(payload.password)
-    customer = await create_customer(session, payload.email, hashed_password)
+    customer = await service.create_customer(session, payload.email, hashed_password)
 
     return Customer(
         id=customer.id,
@@ -58,8 +53,10 @@ async def create_customer(payload: CustomerCreate, session=Depends(get_session))
 async def list_customers(with_deleted: bool = False, session=Depends(get_session), current_customer=Depends(get_current_customer)):
     if not current_customer:
         raise HTTPException(status_code=401, detail="Authentication required")
+    
+    service = CustomerService()
+    customers = await service.list_customers(session, with_deleted)
 
-    customers = await list_customers(session, with_deleted)
     return [
         Customer(
             id=customer.id,
@@ -78,7 +75,8 @@ async def get_customer(customer_id: UUIDType, with_deleted: bool = False, sessio
     if not current_customer:
         raise HTTPException(status_code=401, detail="Authentication required")
 
-    customer = await get_customer_by_id(session, customer_id, with_deleted)
+    service = CustomerService()
+    customer = await service.get_customer_by_id(session, customer_id, with_deleted)
 
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
@@ -98,7 +96,8 @@ async def update_customer(customer_id: UUIDType, payload: CustomerUpdate, sessio
     if not current_customer:
         raise HTTPException(status_code=401, detail="Authentication required")
 
-    customer = await get_customer_by_id(session, customer_id, with_deleted=False)
+    service = CustomerService()
+    customer = await service.get_customer_by_id(session, customer_id, with_deleted=False)
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
 
@@ -106,7 +105,7 @@ async def update_customer(customer_id: UUIDType, payload: CustomerUpdate, sessio
     if payload.password is not None:
         password_hash = hash_password(payload.password)
 
-    updated = await update_customer(
+    updated = await service.update_customer(
         session, customer, email=payload.email, password_hash=password_hash, type=payload.type
     )
 
@@ -125,10 +124,11 @@ async def delete_customer(customer_id: UUIDType, session=Depends(get_session), c
     if not current_customer:
         raise HTTPException(status_code=401, detail="Authentication required")
 
-    customer = await get_customer_by_id(session, customer_id, with_deleted=False)
+    service = CustomerService()
+    customer = await service.get_customer_by_id(session, customer_id, with_deleted=False)
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
 
-    await soft_delete_customer(session, customer)
+    await service.soft_delete_customer(session, customer)
 
     return None

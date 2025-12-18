@@ -15,8 +15,8 @@ async def get_uow():
 
 @urls_router.post("/shorten")
 async def shorten(req: UrlShortenRequest, uow: UnitOfWork = Depends(get_uow), request: Request = None, current_customer=Depends(get_current_customer)):
-    svc = UrlService()
-    short_url = await svc.gen_unique_short(uow)
+    service = UrlService()
+    short_url = await service.gen_unique_short(uow)
 
     if current_customer is None:
         expiration_date = datetime.now(timezone.utc) + timedelta(days=7)
@@ -25,7 +25,7 @@ async def shorten(req: UrlShortenRequest, uow: UnitOfWork = Depends(get_uow), re
     else:
         expiration_date = datetime.now(timezone.utc) + timedelta(days=30)
 
-    await svc.create_shortened(uow, short_url, req.longUrl, current_customer.id if current_customer else None, expiration_date)
+    await service.create_shortened(uow, short_url, req.longUrl, current_customer.id if current_customer else None, expiration_date)
 
     base_url = os.getenv("BASE_URL", "http://localhost:8000")
     return {"shortUrl": f"{base_url}/r/{short_url}"}
@@ -33,8 +33,8 @@ async def shorten(req: UrlShortenRequest, uow: UnitOfWork = Depends(get_uow), re
 
 @urls_router.get("/{short}")
 async def get_shortened_url_mapping(short: str, uow: UnitOfWork = Depends(get_uow), request: Request = None, current_customer=Depends(get_current_customer)):
-    svc = UrlService()
-    url = await svc.get_url_by_short(uow, short)
+    service = UrlService()
+    url = await service.get_url_by_short(uow, short)
 
     if not url:
         raise HTTPException(status_code=404, detail="URL not found")

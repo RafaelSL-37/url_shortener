@@ -38,8 +38,6 @@ docker-compose build --no-cache web && docker-compose up -d && docker-compose lo
 
 
 # TODOS:
-* Refactor to make it object-oriented
-* Create unit tests
 * Do load tests
 * Implement github actions ci/cd workflow
 * Test on aws

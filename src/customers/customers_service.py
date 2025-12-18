@@ -1,6 +1,4 @@
-import customers.customers_repository as customers_repository
-
-class UrlService:
+class CustomerService:
     def __init__(self):
         pass
 
