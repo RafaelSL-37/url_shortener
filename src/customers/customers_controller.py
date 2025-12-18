@@ -1,27 +1,19 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from uuid import UUID as UUIDType
-from datetime import datetime, timezone
-from sqlalchemy import select
 from customers.customers_dto import Customer, CustomerCreate, CustomerUpdate
-from customers.customers_model import CustomerModel
 from db import AsyncSessionLocal
-from auth import (
-    get_current_customer,
-    create_access_token,
-    verify_password,
-    hash_password,
-    Token,
-)
+from auth import get_current_customer, create_access_token, verify_password, hash_password, Token
+from customers.customers_service import CustomerService
 from pydantic import BaseModel
+
+
+customers_router = APIRouter(prefix="/api/customers", tags=["customers"])
 
 
 class LoginRequest(BaseModel):
     email: str
     password: str
-
-
-customers_router = APIRouter(prefix="/api/customers", tags=["customers"])
 
 
 async def get_session():
@@ -31,26 +23,22 @@ async def get_session():
 
 @customers_router.post("/login", response_model=Token)
 async def login(payload: LoginRequest, session=Depends(get_session)):
-    customers = await session.execute(
-        select(CustomerModel).where(CustomerModel.email == payload.email, CustomerModel.deleted_at.is_(None))
-    )
-    customer = customers.scalars().first()
+    service = CustomerService()
+    customer = await service.find_customer_by_email(session, payload.email)
 
     if not customer or not verify_password(payload.password, customer.password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    
+
     access_token = create_access_token(customer_id=customer.id)
     return Token(access_token=access_token, token_type="bearer")
 
 
 @customers_router.post("/", response_model=Customer)
 async def create_customer(payload: CustomerCreate, session=Depends(get_session)):
+    service = CustomerService()
     hashed_password = hash_password(payload.password)
-    customer = CustomerModel(email=str(payload.email), password=hashed_password)
-    session.add(customer)
-    await session.commit()
-    await session.refresh(customer)
-    
+    customer = await service.create_customer(session, payload.email, hashed_password)
+
     return Customer(
         id=customer.id,
         email=customer.email,
@@ -66,11 +54,8 @@ async def list_customers(with_deleted: bool = False, session=Depends(get_session
     if not current_customer:
         raise HTTPException(status_code=401, detail="Authentication required")
     
-    query = select(CustomerModel)
-    if not with_deleted:
-        query = query.where(CustomerModel.deleted_at.is_(None))
-    customers = await session.execute(query)
-    customers = customers.scalars().all()
+    service = CustomerService()
+    customers = await service.list_customers(session, with_deleted)
 
     return [
         Customer(
@@ -89,16 +74,13 @@ async def list_customers(with_deleted: bool = False, session=Depends(get_session
 async def get_customer(customer_id: UUIDType, with_deleted: bool = False, session=Depends(get_session), current_customer=Depends(get_current_customer)):
     if not current_customer:
         raise HTTPException(status_code=401, detail="Authentication required")
-    
-    query = select(CustomerModel).where(CustomerModel.id == customer_id)
-    if not with_deleted:
-        query = query.where(CustomerModel.deleted_at.is_(None))
-    customers = await session.execute(query)
-    customer = customers.scalars().first()
+
+    service = CustomerService()
+    customer = await service.get_customer_by_id(session, customer_id, with_deleted)
 
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
-    
+
     return Customer(
         id=customer.id,
         email=customer.email,
@@ -113,33 +95,27 @@ async def get_customer(customer_id: UUIDType, with_deleted: bool = False, sessio
 async def update_customer(customer_id: UUIDType, payload: CustomerUpdate, session=Depends(get_session), current_customer=Depends(get_current_customer)):
     if not current_customer:
         raise HTTPException(status_code=401, detail="Authentication required")
-    
-    customers = await session.execute(
-        select(CustomerModel).where(CustomerModel.id == customer_id, CustomerModel.deleted_at.is_(None))
-    )
-    customer = customers.scalars().first()
 
+    service = CustomerService()
+    customer = await service.get_customer_by_id(session, customer_id, with_deleted=False)
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
-    if payload.email is not None:
-        customer.email = str(payload.email)
-    if payload.password is not None:
-        customer.password = hash_password(payload.password)
-    if payload.type is not None:
-        customer.type = payload.type
 
-    customer.updated_at = datetime.now(timezone.utc)
-    session.add(customer)
-    await session.commit()
-    await session.refresh(customer)
+    password_hash = None
+    if payload.password is not None:
+        password_hash = hash_password(payload.password)
+
+    updated = await service.update_customer(
+        session, customer, email=payload.email, password_hash=password_hash, type=payload.type
+    )
 
     return Customer(
-        id=customer.id,
-        email=customer.email,
-        type=customer.type,
-        created_at=customer.created_at,
-        updated_at=customer.updated_at,
-        deleted_at=customer.deleted_at,
+        id=updated.id,
+        email=updated.email,
+        type=updated.type,
+        created_at=updated.created_at,
+        updated_at=updated.updated_at,
+        deleted_at=updated.deleted_at,
     )
 
 
@@ -147,17 +123,12 @@ async def update_customer(customer_id: UUIDType, payload: CustomerUpdate, sessio
 async def delete_customer(customer_id: UUIDType, session=Depends(get_session), current_customer=Depends(get_current_customer)):
     if not current_customer:
         raise HTTPException(status_code=401, detail="Authentication required")
-    
-    customers = await session.execute(
-        select(CustomerModel).where(CustomerModel.id == customer_id, CustomerModel.deleted_at.is_(None))
-    )
-    customer = customers.scalars().first()
 
+    service = CustomerService()
+    customer = await service.get_customer_by_id(session, customer_id, with_deleted=False)
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
-    
-    customer.deleted_at = datetime.now(timezone.utc)
-    session.add(customer)
-    await session.commit()
+
+    await service.soft_delete_customer(session, customer)
 
     return None
